@@ -1,0 +1,23 @@
+{
+  "name": "awesome-chat-server",
+  "version": "1.0.0",
+  "description": "CS4400 Lab 1",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alcarasj/awesome-chat-server.git"
+  },
+  "author": "Jerico Alcaras",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alcarasj/awesome-chat-server/issues"
+  },
+  "homepage": "https://github.com/alcarasj/awesome-chat-server#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "websocket": "^1.0.24"
+  }
+}
