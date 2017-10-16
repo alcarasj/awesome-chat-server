@@ -1,28 +1,27 @@
-var net = require('net');
+const net = require('net');
 
-var HOST = '127.0.0.1';
-var PORT = 5000;
+if (process.argv.length <= 2) {
+    console.log("Usage: " + __filename + " PORT_NUMBER");
+    process.exit(-1);
+}
+
+const HOST = '127.0.0.1';
+const PORT = process.argv[2];
+const MESSAGES = [
+  'JOIN_CHATROOM: Duplex\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
+];
 
 var client = new net.Socket();
-client.connect(PORT, HOST, function() {
-
+client.connect(PORT, HOST, () => {
     console.log('CONNECTED TO: ' + HOST + ':' + PORT);
-    // Write a message to the socket as soon as the client is connected, the server will receive it as message from the client
     client.write('KILL_SERVICE\n');
-
 });
 
-// Add a 'data' event handler for the client socket
-// data is what the server sent to this socket
-client.on('data', function(data) {
-
+client.on('data', (data) => {
     console.log('DATA: ' + data);
-    // Close the client socket completely
     client.destroy();
-
 });
 
-// Add a 'close' event handler for the client socket
-client.on('close', function() {
+client.on('close', () => {
     console.log('Connection closed');
 });
