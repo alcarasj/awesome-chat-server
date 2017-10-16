@@ -8,18 +8,21 @@ if (process.argv.length <= 2) {
 const HOST = '127.0.0.1';
 const PORT = process.argv[2];
 const MESSAGES = [
-  'JOIN_CHATROOM: Duplex\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
+  'HELO Jerico\n',
+  'KILL_SERVICE\n',
+  'JOIN_CHATROOM: AwesomeChat\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
+  'LEAVE_CHATROOM: AwesomeChat\nJOIN_ID: 0\nCLIENT_NAME: Jerico\n',
+  'CHAT: [ROOM_REF]\nJOIN_ID: [integer identifying client to server]\nCLIENT_NAME: [string identifying client user]\nMESSAGE: [string terminated with two newlines]\n'
 ];
 
 var client = new net.Socket();
 client.connect(PORT, HOST, () => {
     console.log('CONNECTED TO: ' + HOST + ':' + PORT);
-    client.write('KILL_SERVICE\n');
+    client.write(MESSAGES[2]);
 });
 
 client.on('data', (data) => {
-    console.log('DATA: ' + data);
-    client.destroy();
+    console.log(data.toString());
 });
 
 client.on('close', () => {

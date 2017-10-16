@@ -1,2 +1,2 @@
-start server-win.exe $1
+start server-win.exe 5000
 exit
