@@ -11,6 +11,7 @@ const STUDENT_NUMBER = 14317110;
 
 var clients = [];
 var chatRooms = [];
+
 var server = net.createServer();
 server.listen(PORT, HOST);
 console.log('Server listening on ' + HOST +':'+ PORT);
@@ -46,10 +47,10 @@ server.on('connection', (socket) => {
                 if (isClientInChatRoom(clientName, chatRoomName)) {
                   removeClientFromChatRoom(clientName, chatRoomName);
                   var chatRoomID = getChatRoomID(chatRoomName);
-                  if (chatRoomId !== -1) {
+                  if (chatRoomID !== -1) {
                     socket.write('LEFT_CHATROOM: ' + chatRoomID + '\nJOIN_ID: ' + clientID + '\n');
                     var message = clientName + ' has left this chatroom.\n\n';
-                    if (sendMessage(chatRoomIndex, message, clientName)) {
+                    if (sendMessage(chatRoomName, chatRoomID, message, clientName)) {
                       success = true;
                     }
                   }
@@ -59,7 +60,14 @@ server.on('connection', (socket) => {
                   var clientName = dataString[5];
 
                   if (doesClientExist(clientName)) {
-                    removeClient(socket);
+                    clientIndex = getClientID(clientName) - 1;
+                    var message = clientName + ' has left this chatroom.\n\n';
+                    clients[clientIndex].chatRooms.forEach((chatRoomName) => {
+                      var chatRoomID = getChatRoomID(chatRoomName);
+                      sendMessage(chatRoomName, chatRoomID, message, clientName);
+                    });
+
+                    removeClient(clientName);
                     socket.destroy();
                     success = true;
                   }
@@ -106,9 +114,9 @@ server.on('connection', (socket) => {
     socket.on('end', () => {
     });
 
-    addNewClient = (clientSocket) => { clients.push(clientSocket); }
+    addNewClient = (clientSocket) => clients.push(clientSocket);
 
-    addNewChatRoom = (chatRoomName) => { chatRooms.push(chatRoomName); }
+    addNewChatRoom = (chatRoomName) => chatRooms.push(chatRoomName);
 
     removeClient = (clientName) => clients.splice(getClientID(clientName) - 1, 1);
 
