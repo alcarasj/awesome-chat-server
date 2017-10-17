@@ -13,13 +13,14 @@ const MESSAGES = [
   'KILL_SERVICE\n',
   'JOIN_CHATROOM: AwesomeChat\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
   'LEAVE_CHATROOM: 1\nJOIN_ID: 1\nCLIENT_NAME: Jerico\n',
-  'CHAT: 1\nJOIN_ID: 1\nCLIENT_NAME: Jerico\nMESSAGE: ' + message + '\n'
+  'CHAT: 1\nJOIN_ID: 1\nCLIENT_NAME: Jerico\nMESSAGE: ' + message + '\n',
+  'DISCONNECT: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
 ];
 
 var client = new net.Socket();
 client.connect(PORT, HOST, () => {
     console.log('CONNECTED TO: ' + HOST + ':' + PORT);
-    client.write(MESSAGES[3]);
+    client.write(MESSAGES[2]);
 });
 
 client.on('data', (data) => {

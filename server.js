@@ -15,93 +15,163 @@ var server = net.createServer();
 server.listen(PORT, HOST);
 console.log('Server listening on ' + HOST +':'+ PORT);
 server.on('connection', (socket) => {
-    console.log('CONNECTED: ' + socket.remoteAddress +':'+ socket.remotePort);
-
     socket.on('data', (data) => {
         var dataString = data.toString().trim().replace(/\n/g, ' ').split(' ');
         console.log(dataString);
-        var responseSent = false;
+        var success = false;
         switch (dataString.length) {
           case 1:
             if (dataString[0] === 'KILL_SERVICE') {
               server.close(() => {
                 console.log('Server closed.');
               });
-              responseSent = true;
+              success = true;
               socket.destroy();
             }
             break;
           case 2:
             if (dataString[0] === 'HELO') {
-              socket.write('HELO ' + dataString[1] + '\nIP:' + HOST + '\nPort:' + PORT + '\nStudentID:' + STUDENT_NUMBER + '\n');
-              responseSent = true;
+              var text = dataString[1];
+              socket.write('HELO ' + text + '\nIP:' + HOST + '\nPort:' + PORT + '\nStudentID:' + STUDENT_NUMBER + '\n');
+              success = true;
             }
             break;
           case 6:
             if (dataString[0] === 'LEAVE_CHATROOM:' && dataString[2] === 'JOIN_ID:'
               && dataString[4] === 'CLIENT_NAME:') {
-                chatRoomName = dataString[1];
-                clientID = dataString[3];
-                clientName = dataString[5];
-                var chatRoomIndex = getChatRoomIndex(chatRoomName);
-                socket.write('LEFT_CHATROOM: ' + chatRoomIndex + '\nJOIN_ID: ' + clientID + '\n');
-                var message = clientName + ' has left this chatroom.\n\n';
-                console.log(message);
-                sendMessage(chatRoomIndex, message, clientName);
-                responseSent = true;
+                var chatRoomName = dataString[1];
+                var clientID = dataString[3];
+                var clientName = dataString[5];
+
+                if (isClientInChatRoom(clientName, chatRoomName)) {
+                  removeClientFromChatRoom(clientName, chatRoomName);
+                  var chatRoomID = getChatRoomID(chatRoomName);
+                  if (chatRoomId !== -1) {
+                    socket.write('LEFT_CHATROOM: ' + chatRoomID + '\nJOIN_ID: ' + clientID + '\n');
+                    var message = clientName + ' has left this chatroom.\n\n';
+                    if (sendMessage(chatRoomIndex, message, clientName)) {
+                      success = true;
+                    }
+                  }
+                }
+              } else if (dataString[0] === 'DISCONNECT:' && dataString[2] === 'PORT:'
+                && dataString[4] === 'CLIENT_NAME:') {
+                  var clientName = dataString[5];
+
+                  if (doesClientExist(clientName)) {
+                    removeClient(socket);
+                    socket.destroy();
+                    success = true;
+                  }
               }
             break;
           case 8:
             if (dataString[0] === 'JOIN_CHATROOM:' && dataString[2] === 'CLIENT_IP:'
               && dataString[4] === 'PORT:' && dataString[6] === 'CLIENT_NAME:') {
-                chatRoomName = dataString[1];
-                clientName = dataString[7];
-                var chatRoomIndex = getChatRoomIndex(chatRoomName);
-                socket.chatRoom = chatRoomName;
-                socket.name = clientName;
-                var clientID = getClientID(socket);
-                socket.write('JOINED_CHATROOM: ' + chatRoomName + '\nSERVER_IP: ' + HOST + '\nPORT: ' + PORT + '\n' +
-                'ROOM_REF: '+ chatRoomIndex + '\nJOIN_ID: ' + clientID + '\n');
-                var message = clientName + ' has joined this chatroom.\n\n';
-                console.log(message);
-                sendMessage(chatRoomName, message, clientName);
-                responseSent = true;
+                var chatRoomName = dataString[1];
+                var clientName = dataString[7];
+
+                if (!doesChatRoomExist(chatRoomName)) {
+                  addNewChatRoom(chatRoomName);
+                }
+                if (!doesClientExist(clientName)) {
+                  socket.name = clientName;
+                  socket.chatRooms = [];
+                  addNewClient(socket);
+                }
+                if (!isClientInChatRoom(clientName)) {
+                  addClientToChatRoom(clientName, chatRoomName);
+                  console.log(clients);
+                  var chatRoomID = getChatRoomID(chatRoomName);
+                  var clientID = getClientID(clientName);
+                  if (chatRoomID !== -1 && clientID !== -1) {
+                    socket.write('JOINED_CHATROOM: ' + chatRoomName + '\nSERVER_IP: ' + HOST + '\nPORT: ' + PORT + '\n' +
+                    'ROOM_REF: '+ chatRoomID + '\nJOIN_ID: ' + clientID + '\n');
+                    var message = clientName + ' has joined this chatroom.\n\n';
+                    if (sendMessage(chatRoomName, chatRoomID, message, clientName)) {
+                      success = true;
+                    }
+                  }
+                }
             }
             break;
         }
 
-        if (!responseSent) {
+        if (!success) {
           socket.write('ERROR_CODE: 400\nERROR_DESCRIPTION: Bad request.\n');
-          responseSent = true;
+          success = true;
         }
     });
 
-    function getChatRoomIndex(chatRoomName) {
-      if (chatRooms.includes(chatRoomName)) {
-        return chatRooms.indexOf(chatRoomName);
-      } else {
-        return chatRooms.push(chatRoomName);
-      }
-    }
+    socket.on('end', () => {
+    });
 
-    function getClientID(clientSocket) {
-      var clientName = clientSocket.name;
+    addNewClient = (clientSocket) => { clients.push(clientSocket); }
+
+    addNewChatRoom = (chatRoomName) => { chatRooms.push(chatRoomName); }
+
+    removeClient = (clientName) => clients.splice(getClientID(clientName) - 1, 1);
+
+    doesChatRoomExist = (chatRoomName) => { return chatRooms.includes(chatRoomName); }
+
+    doesClientExist = (clientName) => {
       for (var i = 0; i < clients.length; i++) {
         if (clients[i].name === clientName) {
-          return i;
+          return true;
         }
       }
-      return clients.push(clientSocket);
+      return false;
     }
 
-    function sendMessage(chatRoomIndex, message, senderName) {
+    isClientInChatRoom = (clientName, chatRoomName) => {
+      for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name === clientName && clients[i].chatRooms.includes(chatRoomName)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    addClientToChatRoom = (clientName, chatRoomName) => {
+      for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name === clientName && !clients[i].chatRooms.includes(chatRoomName)) {
+          return clients[i].chatRooms.push(chatRoomName);
+        }
+      }
+    }
+
+    removeClientFromChatRoom = (clientName, chatRoomName) => {
+      for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name === clientName && clients[i].chatRooms.includes(chatRoomName)) {
+          return clients[i].chatRooms.filter((chatRoom) => {
+            return chatRoom !== chatRoomName;
+          });
+        }
+      }
+    }
+
+    getChatRoomID = (chatRoomName) => { return chatRooms.indexOf(chatRoomName) + 1; }
+
+    getClientID = (clientName) => {
+      for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name === clientName) {
+          return i + 1;
+        }
+      }
+      return -1;
+    }
+
+    sendMessage = (chatRoomName, chatRoomID, message, senderName) => {
       var recipients = clients.filter((client) => {
-        return client.chatRoom === chatRoomName;
+        return client.chatRooms.includes(chatRoomName);
       });
       if (recipients.length > 0) {
         recipients.forEach((recipient) => {
-          recipient.write('CHAT: ' + chatRoomIndex + '\nCLIENT_NAME: ' + senderName + '\nMESSAGE: ' + message + '\n');
+          recipient.write('CHAT: ' + chatRoomID + '\nCLIENT_NAME: ' + senderName + '\nMESSAGE: ' + message + '\n');
         });
+        return true;
+      } else {
+        return false;
       }
     }
 });
