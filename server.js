@@ -40,7 +40,15 @@ server.on('connection', (socket) => {
           case 6:
             if (dataString[0] === 'LEAVE_CHATROOM:' && dataString[2] === 'JOIN_ID:'
               && dataString[4] === 'CLIENT_NAME:') {
-                //Handle
+                chatRoomName = dataString[1];
+                clientID = dataString[3];
+                clientName = dataString[5];
+                var chatRoomIndex = getChatRoomIndex(chatRoomName);
+                socket.write('LEFT_CHATROOM: ' + chatRoomIndex + '\nJOIN_ID: ' + clientID + '\n');
+                var message = clientName + ' has left this chatroom.\n\n';
+                console.log(message);
+                sendMessage(chatRoomIndex, message, clientName);
+                responseSent = true;
               }
             break;
           case 8:
@@ -54,7 +62,7 @@ server.on('connection', (socket) => {
                 var clientID = getClientID(socket);
                 socket.write('JOINED_CHATROOM: ' + chatRoomName + '\nSERVER_IP: ' + HOST + '\nPORT: ' + PORT + '\n' +
                 'ROOM_REF: '+ chatRoomIndex + '\nJOIN_ID: ' + clientID + '\n');
-                var message = clientName + ' has joined ' + chatRoomName + '.\n\n';
+                var message = clientName + ' has joined this chatroom.\n\n';
                 console.log(message);
                 sendMessage(chatRoomName, message, clientName);
                 responseSent = true;
@@ -72,7 +80,7 @@ server.on('connection', (socket) => {
       if (chatRooms.includes(chatRoomName)) {
         return chatRooms.indexOf(chatRoomName);
       } else {
-        return chatRooms.push(chatRoomName) - 1;
+        return chatRooms.push(chatRoomName);
       }
     }
 
@@ -83,16 +91,16 @@ server.on('connection', (socket) => {
           return i;
         }
       }
-      return clients.push(clientSocket) - 1;
+      return clients.push(clientSocket);
     }
 
-    function sendMessage(chatRoomName, message, senderName) {
+    function sendMessage(chatRoomIndex, message, senderName) {
       var recipients = clients.filter((client) => {
         return client.chatRoom === chatRoomName;
       });
       if (recipients.length > 0) {
         recipients.forEach((recipient) => {
-          recipient.write('CHAT: ' + chatRoomName + '\nCLIENT_NAME: ' + senderName + '\nMESSAGE: ' + message + '\n');
+          recipient.write('CHAT: ' + chatRoomIndex + '\nCLIENT_NAME: ' + senderName + '\nMESSAGE: ' + message + '\n');
         });
       }
     }
