@@ -5,12 +5,13 @@ if (process.argv.length <= 2) {
     process.exit(-1);
 }
 
-const HOST = '127.0.0.1';
+const HOST = '0.0.0.0';
 const PORT = process.argv[2];
 const STUDENT_NUMBER = 14317110;
 
 var clients = [];
 var chatRooms = [];
+var clientCounter = 0;
 
 var server = net.createServer();
 server.listen(PORT, HOST);
@@ -60,7 +61,7 @@ server.on('connection', (socket) => {
                   var clientName = dataString[5];
 
                   if (doesClientExist(clientName)) {
-                    clientIndex = getClientID(clientName) - 1;
+                    clientIndex = getClientIndex(clientName);
                     var message = clientName + ' has left this chatroom.\n\n';
                     clients[clientIndex].chatRooms.forEach((chatRoomName) => {
                       var chatRoomID = getChatRoomID(chatRoomName);
@@ -83,6 +84,7 @@ server.on('connection', (socket) => {
                   addNewChatRoom(chatRoomName);
                 }
                 if (!doesClientExist(clientName)) {
+                  socket.id = ++clientCounter;
                   socket.name = clientName;
                   socket.chatRooms = [];
                   addNewClient(socket);
@@ -163,7 +165,16 @@ server.on('connection', (socket) => {
     getClientID = (clientName) => {
       for (var i = 0; i < clients.length; i++) {
         if (clients[i].name === clientName) {
-          return i + 1;
+          return client.id;
+        }
+      }
+      return -1;
+    }
+
+    getClientIndex = (client) => {
+      for (var i = 0; i < clients.length; i++) {
+        if (clients[i].name === clientName) {
+          return i;
         }
       }
       return -1;
