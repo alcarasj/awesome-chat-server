@@ -9,7 +9,19 @@ const HOST = '0.0.0.0';
 const PORT = process.argv[2];
 const STUDENT_NUMBER = 14317110;
 
+/*
+STORE CONNECTED SOCKETS
+Client: {
+  id: int (also used for JOIN_ID)
+  name: String
+  chatRooms: String[]
+}
+*/
 var clients = [];
+
+/*
+STORE CHAT ROOMS AS STRINGS
+*/
 var chatRooms = [];
 var clientCounter = 0;
 
@@ -27,8 +39,8 @@ server.on('connection', (socket) => {
               server.close(() => {
                 console.log('Server closed.');
               });
-              success = true;
               socket.destroy();
+              success = true;
             }
             break;
           case 2:
@@ -109,11 +121,11 @@ server.on('connection', (socket) => {
 
         if (!success) {
           socket.write('ERROR_CODE: 400\nERROR_DESCRIPTION: Bad request.\n');
-          success = true;
         }
     });
 
     socket.on('end', () => {
+      socket.destroy();
     });
 
     addNewClient = (clientSocket) => clients.push(clientSocket);
@@ -171,7 +183,7 @@ server.on('connection', (socket) => {
       return -1;
     }
 
-    getClientIndex = (client) => {
+    getClientIndex = (clientName) => {
       for (var i = 0; i < clients.length; i++) {
         if (clients[i].name === clientName) {
           return i;
