@@ -11,7 +11,7 @@ var message = 'Hello world!\n\n';
 const MESSAGES = [
   'HELO Jerico\n',
   'KILL_SERVICE\n',
-  'JOIN_CHATROOM: AwesomeChat\nCLIENT_IP: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
+  'JOIN_CHATROOM:AwesomeChat\nCLIENT_IP:0\nPORT:0\nCLIENT_NAME:Jerico\n',
   'LEAVE_CHATROOM: 1\nJOIN_ID: 1\nCLIENT_NAME: Jerico\n',
   'CHAT: 1\nJOIN_ID: 1\nCLIENT_NAME: Jerico\nMESSAGE: ' + message + '\n',
   'DISCONNECT: 0\nPORT: 0\nCLIENT_NAME: Jerico\n',
