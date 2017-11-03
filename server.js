@@ -31,7 +31,6 @@ console.log('Server listening on ' + HOST +':'+ PORT);
 server.on('connection', (socket) => {
     socket.on('data', (data) => {
         var dataString = data.toString().trim().replace(/\n/g, ' ').split(' ');
-        console.log(dataString);
         var success = false;
         switch (dataString.length) {
           case 1:
@@ -124,13 +123,9 @@ server.on('connection', (socket) => {
           var chatRoomName = getChatRoomName(chatRoomID);
           var message = dataString.slice(7, dataString.length).join(' ');
           message += '\n\n';
-          console.log(message);
           sendMessage(chatRoomName, chatRoomID, message, clientName);
           success = true;
         }
-
-        console.log("CLIENTS")
-        console.log(clients)
 
         if (!success) {
           socket.write('ERROR_CODE:400\nERROR_DESCRIPTION:Bad request.\n');
@@ -220,8 +215,6 @@ server.on('connection', (socket) => {
       var recipients = clients.filter((client) => {
         return client.chatRooms.includes(chatRoomName);
       });
-      console.log("RECIPIENTS")
-      console.log(recipients)
       if (recipients.length > 0 && chatRoomID != null && senderName != null && message != null) {
         recipients.forEach((recipient) => {
           recipient.write('CHAT:' + chatRoomID + '\nCLIENT_NAME:' + senderName + '\nMESSAGE:' + message);
