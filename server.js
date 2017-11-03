@@ -30,7 +30,7 @@ server.listen(PORT, HOST);
 console.log('Server listening on ' + HOST +':'+ PORT);
 server.on('connection', (socket) => {
     socket.on('data', (data) => {
-        var dataString = data.toString().trim().replace(/\n/g, ' ').replace(/:/g, ' ').split(' ');
+        var dataString = data.toString().trim().replace(/\n/g, ' ').split(' ');
         console.log(dataString);
         var success = false;
         switch (dataString.length) {
@@ -40,7 +40,7 @@ server.on('connection', (socket) => {
                 console.log('Server closed.');
               });
               socket.destroy();
-              success = true;
+              success = true;;
             }
             break;
           case 2:
@@ -51,25 +51,26 @@ server.on('connection', (socket) => {
             }
             break;
           case 6:
-            if (dataString[0] === 'LEAVE_CHATROOM' && dataString[2] === 'JOIN_ID'
-              && dataString[4] === 'CLIENT_NAME') {
-                var chatRoomName = dataString[1];
+            if (dataString[0] === 'LEAVE_CHATROOM:' && dataString[2] === 'JOIN_ID:'
+              && dataString[4] === 'CLIENT_NAME:') {
+
+                var chatRoomID = dataString[1];
                 var clientID = dataString[3];
                 var clientName = dataString[5];
 
-                if (isClientInChatRoom(clientName, chatRoomName)) {
-                  removeClientFromChatRoom(clientName, chatRoomName);
-                  var chatRoomID = getChatRoomID(chatRoomName);
-                  if (chatRoomID !== -1) {
+                if (doesChatRoomIDExist(chatRoomID)) {
+                  var chatRoomName = getChatRoomName(chatRoomID);
+                  if (isClientInChatRoom(clientName, chatRoomName)) {
+                    removeClientFromChatRoom(clientName, chatRoomName);
                     socket.write('LEFT_CHATROOM:' + chatRoomID + '\nJOIN_ID:' + clientID + '\n');
                     var message = clientName + ' has left this chatroom.\n\n';
-                    if (sendMessage(chatRoomName, chatRoomID, message, clientName)) {
-                      success = true;
-                    }
+                    sendMessage(chatRoomName, chatRoomID, message, clientName);
+                    socket.write('CHAT:' + chatRoomID + '\nCLIENT_NAME:' + clientName + '\nMESSAGE:' + message);
+                    success = true;
                   }
                 }
-              } else if (dataString[0] === 'DISCONNECT' && dataString[2] === 'PORT'
-                && dataString[4] === 'CLIENT_NAME') {
+              } else if (dataString[0] === 'DISCONNECT:' && dataString[2] === 'PORT:'
+                && dataString[4] === 'CLIENT_NAME:') {
                   var clientName = dataString[5];
 
                   if (doesClientExist(clientName)) {
@@ -87,11 +88,10 @@ server.on('connection', (socket) => {
               }
             break;
           case 8:
-            if (dataString[0] === 'JOIN_CHATROOM' && dataString[2] === 'CLIENT_IP'
-              && dataString[4] === 'PORT' && dataString[6] === 'CLIENT_NAME') {
+            if (dataString[0] === 'JOIN_CHATROOM:' && dataString[2] === 'CLIENT_IP:'
+              && dataString[4] === 'PORT:' && dataString[6] === 'CLIENT_NAME:') {
                 var chatRoomName = dataString[1];
                 var clientName = dataString[7];
-                var debug = doesChatRoomExist(chatRoomName)
                 if (!doesChatRoomExist(chatRoomName)) {
                   addNewChatRoom(chatRoomName);
                 }
@@ -109,14 +109,28 @@ server.on('connection', (socket) => {
                     socket.write('JOINED_CHATROOM:' + chatRoomName + '\nSERVER_IP:' + HOST + '\nPORT:' + PORT + '\n' +
                     'ROOM_REF:'+ chatRoomID + '\nJOIN_ID:' + clientID + '\n');
                     var message = clientName + ' has joined this chatroom.\n\n';
-                    if (sendMessage(chatRoomName, chatRoomID, message, clientName)) {
-                      success = true;
-                    }
+                    sendMessage(chatRoomName, chatRoomID, message, clientName);
+                    success = true;
                   }
                 }
             }
             break;
         }
+
+        if (dataString[0] === 'CHAT:' && dataString[2] === 'JOIN_ID:' && dataString[4] === 'CLIENT_NAME:' && dataString[6] === 'MESSAGE:') {
+          var chatRoomID = dataString[1];
+          var clientID = dataString[3];
+          var clientName = dataString[5];
+          var chatRoomName = getChatRoomName(chatRoomID);
+          var message = dataString.slice(7, dataString.length).join(' ');
+          message += '\n\n';
+          console.log(message);
+          sendMessage(chatRoomName, chatRoomID, message, clientName);
+          success = true;
+        }
+
+        console.log("CLIENTS")
+        console.log(clients)
 
         if (!success) {
           socket.write('ERROR_CODE:400\nERROR_DESCRIPTION:Bad request.\n');
@@ -131,9 +145,18 @@ server.on('connection', (socket) => {
 
     addNewChatRoom = (chatRoomName) => chatRooms.push(chatRoomName);
 
-    removeClient = (clientName) => clients.splice(getClientID(clientName) - 1, 1);
+    removeClient = (clientName) => clients.splice(getClientIndex(clientName), 1);
 
     doesChatRoomExist = (chatRoomName) => { return chatRooms.includes(chatRoomName); }
+
+    doesChatRoomIDExist = (chatRoomID) => {
+      var chatRoomIndex = chatRoomID - 1;
+      if (chatRoomIndex < chatRooms.length && chatRoomIndex >= 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
     doesClientExist = (clientName) => {
       for (var i = 0; i < clients.length; i++) {
@@ -164,12 +187,14 @@ server.on('connection', (socket) => {
     removeClientFromChatRoom = (clientName, chatRoomName) => {
       for (var i = 0; i < clients.length; i++) {
         if (clients[i].name === clientName && clients[i].chatRooms.includes(chatRoomName)) {
-          return clients[i].chatRooms.filter((chatRoom) => {
+          clients[i].chatRooms = clients[i].chatRooms.filter((chatRoom) => {
             return chatRoom !== chatRoomName;
           });
         }
       }
     }
+
+    getChatRoomName = (chatRoomID) => { return chatRooms[chatRoomID - 1]; }
 
     getChatRoomID = (chatRoomName) => { return chatRooms.indexOf(chatRoomName) + 1; }
 
@@ -195,13 +220,12 @@ server.on('connection', (socket) => {
       var recipients = clients.filter((client) => {
         return client.chatRooms.includes(chatRoomName);
       });
-      if (recipients.length > 0) {
+      console.log("RECIPIENTS")
+      console.log(recipients)
+      if (recipients.length > 0 && chatRoomID != null && senderName != null && message != null) {
         recipients.forEach((recipient) => {
-          recipient.write('CHAT:' + chatRoomID + '\nCLIENT_NAME:' + senderName + '\nMESSAGE:' + message + '\n');
+          recipient.write('CHAT:' + chatRoomID + '\nCLIENT_NAME:' + senderName + '\nMESSAGE:' + message);
         });
-        return true;
-      } else {
-        return false;
       }
     }
 });
