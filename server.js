@@ -217,6 +217,7 @@ server.on('connection', (socket) => {
       });
       if (recipients.length > 0 && chatRoomID != null && senderName != null && message != null) {
         recipients.forEach((recipient) => {
+          console.log('[' + chatRoomName + '] ' + senderName + ': ' + message);
           recipient.write('CHAT:' + chatRoomID + '\nCLIENT_NAME:' + senderName + '\nMESSAGE:' + message);
         });
       }
