@@ -170,6 +170,7 @@ server.on('connection', (socket) => {
         clients[i].chatRooms = clients[i].chatRooms.filter((chatRoom) => {
           return chatRoom !== chatRoomName;
         });
+        return;
       }
     }
   }
