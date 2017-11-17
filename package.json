@@ -4,7 +4,7 @@
   "description": "CS4400 Lab 1",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "start": "node server.js 8080"
   },
   "repository": {
     "type": "git",
@@ -16,9 +16,5 @@
     "url": "https://github.com/alcarasj/awesome-chat-server/issues"
   },
   "homepage": "https://github.com/alcarasj/awesome-chat-server#readme",
-  "dependencies": {
-    "express": "^4.16.2",
-    "socket.io": "^2.0.3",
-    "websocket": "^1.0.24"
-  }
+  "dependencies": {}
 }
