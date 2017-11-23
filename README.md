@@ -14,7 +14,6 @@ Ah, so you're a distributed systems autist? Well, assuming that you have Docker 
 1. Pull the Docker image by running `docker pull alcarasj/chat-server-task`.
 2. Run the image on the node using `docker run -p 49160:8080 -d alcaras/awesome-chat-server`.
 3. The server will now run in a container using public port 8080. Use this along with the node's public IP address to connect to it.
-## ____________________________________________________________
 ## Making an SCSS OpenNebula Node
 1. Login to nimbusselfservice.scss.tcd.ie
 2. Go to **Templates** -> **VMs** -> **[VM]DebianStretchTeaching[v01]**
